@@ -27,4 +27,4 @@ class Solution:
 
 
 s = Solution()
-s.solve()
+print(s.solve())
