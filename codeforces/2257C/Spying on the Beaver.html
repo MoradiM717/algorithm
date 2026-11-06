@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Spying on the Beaver — حل بصری</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+  --bg:#EDF2EF; --surface:#FAFCFB; --ink:#17302D; --muted:#566B67; --line:#C9D6D1;
+  --edge:#7E918C; --wood:#8B5A2B; --cam:#E59A0B; --cam-ink:#3B2600;
+  --bad:#C0392B; --bad-bg:#F8E3E0; --good:#1E8A5A; --good-bg:#DDF1E7; --warn-bg:#FBEFD2;
+  --accent:#17756F; --on-accent:#FFFFFF;
+  --c0:hsl(170 45% 78%); --c1:hsl(35 80% 80%); --c2:hsl(205 60% 80%); --c3:hsl(335 55% 82%); --c4:hsl(95 45% 76%);
+  --c5:hsl(265 50% 82%); --c6:hsl(15 70% 80%); --c7:hsl(55 70% 76%); --c8:hsl(190 50% 72%); --c9:hsl(305 40% 80%);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0F1A19; --surface:#172625; --ink:#E4EFEC; --muted:#93AAA5; --line:#2B403D;
+    --edge:#6F8884; --wood:#C98F55; --cam:#F0AE2D; --cam-ink:#2B1C00;
+    --bad:#FF8B7C; --bad-bg:#3A1F1C; --good:#55D39B; --good-bg:#17342A; --warn-bg:#352B12;
+    --accent:#4FC3BA; --on-accent:#07211F;
+    --c0:hsl(170 30% 28%); --c1:hsl(35 45% 30%); --c2:hsl(205 40% 30%); --c3:hsl(335 35% 32%); --c4:hsl(95 30% 28%);
+    --c5:hsl(265 32% 34%); --c6:hsl(15 42% 30%); --c7:hsl(55 40% 28%); --c8:hsl(190 35% 27%); --c9:hsl(305 28% 32%);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F1A19; --surface:#172625; --ink:#E4EFEC; --muted:#93AAA5; --line:#2B403D;
+  --edge:#6F8884; --wood:#C98F55; --cam:#F0AE2D; --cam-ink:#2B1C00;
+  --bad:#FF8B7C; --bad-bg:#3A1F1C; --good:#55D39B; --good-bg:#17342A; --warn-bg:#352B12;
+  --accent:#4FC3BA; --on-accent:#07211F;
+  --c0:hsl(170 30% 28%); --c1:hsl(35 45% 30%); --c2:hsl(205 40% 30%); --c3:hsl(335 35% 32%); --c4:hsl(95 30% 28%);
+  --c5:hsl(265 32% 34%); --c6:hsl(15 42% 30%); --c7:hsl(55 40% 28%); --c8:hsl(190 35% 27%); --c9:hsl(305 28% 32%);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Vazirmatn",Tahoma,"Segoe UI",system-ui,sans-serif;
+  font-size:16px; line-height:1.85;
+}
+.wrap{max-width:1100px; margin:0 auto; padding:24px 16px 56px}
+h1{font-size:clamp(24px,4vw,34px); font-weight:800; margin:0 0 6px; line-height:1.4}
+.lead{margin:0 0 20px; color:var(--muted); max-width:62ch}
+.lead b{color:var(--ink); font-weight:600}
+.ltr{direction:ltr; unicode-bidi:isolate; display:inline-block}
+.bar{display:flex; flex-wrap:wrap; gap:8px 10px; align-items:center; margin-bottom:14px}
+.bar .sep{flex:1}
+button{
+  font:inherit; font-size:14px; line-height:1.4; color:var(--ink); background:var(--surface);
+  border:1.5px solid var(--line); border-radius:999px; padding:7px 15px; cursor:pointer;
+}
+button:hover{border-color:var(--accent)}
+button:focus-visible,.edge:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+button[aria-pressed="true"],button.on{background:var(--accent); border-color:var(--accent); color:var(--on-accent)}
+button:disabled{opacity:.45; cursor:default}
+.modes{display:inline-flex; gap:6px}
+.grid{display:grid; grid-template-columns:1fr; gap:18px}
+@media (min-width:920px){ .grid{grid-template-columns:1.55fr 1fr; align-items:start} }
+.stage{background:var(--surface); border:1.5px solid var(--line); border-radius:18px; padding:14px 14px 10px}
+.echo{display:flex; flex-wrap:wrap; gap:6px 18px; font-size:13px; color:var(--muted); margin-bottom:4px}
+.echo code{font-family:ui-monospace,Menlo,Consolas,monospace; color:var(--ink); direction:ltr; unicode-bidi:isolate; display:inline-block}
+svg.tree{display:block; width:100%; height:auto; direction:ltr; overflow:visible}
+.edge .vis{stroke:var(--edge); stroke-width:3; fill:none; stroke-linecap:round}
+.edge .hit{stroke:transparent; stroke-width:28; fill:none}
+.interactive .edge{cursor:pointer}
+.interactive .edge:not(.cut):hover .vis{stroke:var(--accent); stroke-width:4.5}
+.edge.cut .vis{stroke:var(--cam); stroke-width:4; stroke-dasharray:1 8}
+.edge.safe .vis{stroke:var(--good); stroke-width:4.5}
+.edge:focus{outline:none}
+.edge:focus-visible .vis{stroke:var(--accent); stroke-width:5}
+.camicon{transform-box:fill-box; transform-origin:center}
+.camicon.pop{animation:pop .38s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.2); opacity:0} to{transform:scale(1); opacity:1}}
+.nodetxt{font-family:"Vazirmatn",Tahoma,sans-serif; font-size:15px; font-weight:800; fill:var(--ink); text-anchor:middle; dominant-baseline:central; pointer-events:none}
+.tag{font-family:"Vazirmatn",Tahoma,sans-serif; font-size:12px; fill:var(--muted); text-anchor:middle; pointer-events:none}
+.tag.g{fill:var(--good); font-weight:600}
+.legend{display:flex; flex-wrap:wrap; gap:6px 18px; font-size:13px; color:var(--muted); margin-top:4px; align-items:center}
+.legend i{display:inline-block; vertical-align:middle; margin-inline-end:6px}
+.lg-dam{width:16px; height:16px; border:3px solid var(--wood); border-radius:5px; background:var(--c0)}
+.lg-node{width:16px; height:16px; border:2px solid var(--edge); border-radius:50%; background:var(--c0)}
+.lg-cam{width:16px; height:16px; border-radius:50%; background:var(--cam)}
+.side{display:flex; flex-direction:column; gap:14px}
+.stats{display:flex; flex-wrap:wrap; gap:8px}
+.chip{background:var(--surface); border:1.5px solid var(--line); border-radius:12px; padding:4px 12px; font-size:14px; line-height:1.6}
+.chip b{font-weight:800; font-size:17px; margin-inline-start:4px}
+.status{border-radius:14px; padding:12px 14px; font-size:15px; line-height:1.8}
+.status.good{background:var(--good-bg); border:1.5px solid var(--good)}
+.status.bad{background:var(--bad-bg); border:1.5px solid var(--bad)}
+.status.warn{background:var(--warn-bg); border:1.5px solid var(--cam)}
+.sigs{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px}
+.sigs li{display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; background:var(--surface); border:1.5px solid var(--line); border-radius:12px; padding:6px 12px; font-size:14px}
+.sigs li.bad{border-color:var(--bad); background:var(--bad-bg)}
+.sigs .dm{font-weight:800; min-width:64px}
+.pill{display:inline-block; background:var(--cam); color:var(--cam-ink); border-radius:999px; padding:0 9px; font-size:13px; font-weight:600; line-height:1.6}
+.sub{font-size:13px; color:var(--muted); margin:0 0 6px}
+.why{font-size:14px; color:var(--muted); margin:0}
+.why b{color:var(--ink); font-weight:600}
+.solve{background:var(--surface); border:1.5px solid var(--line); border-radius:14px; padding:12px 14px}
+.solve .stepno{font-size:13px; color:var(--muted); margin-bottom:2px}
+.solve p{margin:0 0 10px}
+.solve .ctl{display:flex; flex-wrap:wrap; gap:8px}
+pre.out{direction:ltr; text-align:left; margin:0 0 10px; background:var(--bg); border:1.5px solid var(--line); border-radius:10px; padding:8px 12px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:15px}
+.hidden{display:none !important}
+@media (prefers-reduced-motion:reduce){ .camicon.pop{animation:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Spying on the Beaver — ببین چطور حل می‌شه</h1>
+  <p class="lead">ایده‌ی کل سوال یه جمله‌ست: camera ها رو که از tree حذف کنی، tree به چند تیکه (component) می‌شکنه. جواب معتبره <b>اگه توی هر component حداکثر یه dam باشه</b>. اول خودت با کلیک روی edge ها بازی کن، بعد برو سراغ راه‌حل قدم‌به‌قدم.</p>
+
+  <div class="bar" id="presets" role="group" aria-label="انتخاب تست"></div>
+  <div class="bar">
+    <div class="modes" role="group" aria-label="حالت">
+      <button id="mPlay" aria-pressed="true">خودم امتحان می‌کنم</button>
+      <button id="mSolve" aria-pressed="false">راه‌حل قدم‌به‌قدم</button>
+    </div>
+    <span class="sep"></span>
+    <button id="clear">پاک کردن camera ها</button>
+  </div>
+
+  <div class="grid">
+    <section class="stage" aria-label="tree">
+      <div class="echo" id="echo"></div>
+      <div id="treeBox"></div>
+      <div class="legend">
+        <span><i class="lg-dam"></i>dam (جایی که beaver ممکنه بره)</span>
+        <span><i class="lg-node"></i>vertex معمولی</span>
+        <span><i class="lg-cam"></i>camera روی edge</span>
+        <span>رنگ هر vertex = component اش</span>
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="stats" id="stats"></div>
+      <div class="status" id="status" role="status" aria-live="polite"></div>
+
+      <div class="solve hidden" id="solvePanel">
+        <div class="stepno" id="stepNo"></div>
+        <p id="stepText"></p>
+        <pre class="out hidden" id="stepOut"></pre>
+        <div class="ctl">
+          <button id="prev">قبلی</button>
+          <button id="next">بعدی</button>
+          <button id="auto">پخش خودکار</button>
+        </div>
+      </div>
+
+      <div>
+        <p class="sub">هر dam چی می‌بینه؟ (camera های روی مسیر root تا اون dam)</p>
+        <ul class="sigs" id="sigs"></ul>
+      </div>
+      <p class="why"><b>چرا حداقل m−1؟</b> هر camera یه edge از tree حذف می‌کنه و تعداد component ها رو دقیقاً یکی زیاد می‌کنه. m تا dam باید توی m تا component جدا بیفتن، پس حداقل m−1 تا camera لازمه.</p>
+    </aside>
+  </div>
+</div>
+
+<script>
+const PRESETS = [
+  {key:'t1', label:'تست ۱', n:2, p:[1], a:[1]},
+  {key:'t2', label:'تست ۲', n:3, p:[1,1], a:[2,3,1]},
+  {key:'t3', label:'تست ۳', n:3, p:[1,2], a:[2,3]},
+  {key:'t4', label:'تست ۴', n:6, p:[1,2,2,1,1], a:[5,3,1]},
+  {key:'rnd', label:'tree تصادفی', random:true}
+];
+
+const $ = s => document.querySelector(s);
+const L = x => `<span class="ltr">${x}</span>`;
+
+let T = null, cams = new Set(), mode = 'play', step = 0, steps = [], timer = null, justAdded = null, curKey = 't4';
+
+function makeTree(n, p, a){
+  const par = [0,0]; const kids = Array.from({length:n+1}, () => []);
+  for(let i=2;i<=n;i++){ par[i] = p[i-2]; kids[par[i]].push(i); }
+  const t = {n, par, kids, dams:a.slice(), p:p.slice()};
+  // layout
+  const x = [], d = []; let leaf = 0, maxd = 0;
+  (function dfs(v, dep){
+    d[v] = dep; maxd = Math.max(maxd, dep);
+    const k = kids[v];
+    if(!k.length){ x[v] = leaf++; return; }
+    let s = 0; for(const c of k){ dfs(c, dep+1); s += x[c]; }
+    x[v] = s / k.length;
+  })(1, 0);
+  const W = 720, pad = 50;
+  const gap = leaf > 1 ? Math.min(120, (W - 2*pad) / (leaf - 1)) : 0;
+  const off = (W - gap * (leaf - 1)) / 2;
+  const X = [], Y = [];
+  for(let v=1; v<=n; v++){ X[v] = off + x[v]*gap; Y[v] = 64 + d[v]*88; }
+  t.geo = {X, Y, W, H: 64 + maxd*88 + 56};
+  return t;
+}
+
+function randomPreset(){
+  const n = 8 + Math.floor(Math.random()*7);
+  const p = [];
+  for(let i=2;i<=n;i++){ const lo = Math.max(1, i-4); p.push(lo + Math.floor(Math.random()*(i-lo))); }
+  const all = Array.from({length:n}, (_,i) => i+1);
+  for(let i=n-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [all[i],all[j]] = [all[j],all[i]]; }
+  const m = 3 + Math.floor(Math.random()*3);
+  return {n, p, a:all.slice(0,m)};
+}
+
+function components(){
+  const id = Array.from({length:T.n+1}, (_,i) => i);
+  const f = x => id[x] === x ? x : (id[x] = f(id[x]));
+  for(let v=2; v<=T.n; v++) if(!cams.has(v)) id[f(v)] = f(T.par[v]);
+  const map = new Map(), comp = [];
+  for(let v=1; v<=T.n; v++){ const r = f(v); if(!map.has(r)) map.set(r, map.size); comp[v] = map.get(r); }
+  return {comp, count:map.size};
+}
+
+function signatures(){
+  return T.dams.slice().sort((a,b) => a-b).map(d => {
+    const path = [];
+    for(let v=d; v!==1; v=T.par[v]) if(cams.has(v)) path.push(v);
+    path.reverse();
+    return {d, path, key:path.join(',')};
+  });
+}
+
+function buildSteps(){
+  const dams = T.dams.slice().sort((a,b) => a-b);
+  const m = dams.length, free = dams[0], others = dams.slice(1);
+  const out = `${m-1}${others.length ? ' ' + others.join(' ') : ''}`;
+  const st = [];
+  st.push({cams:[], text:`شروع: ${m} تا dam داریم و هنوز camera ای نذاشتیم، پس کل tree یه component ـه. هدف اینه که dam ها توی component های جدا بیفتن.`});
+  st.push({cams:[], free:true, text:`اول یه dam انتخاب می‌کنیم که camera نمی‌گیره: dam با کوچیک‌ترین شماره، یعنی ${L(free)}. چرا امنه؟ چون p_i < i، یعنی هر ancestor شماره‌ی کمتری از child اش داره. پس هیچ dam دیگه‌ای روی مسیر سبز (root تا ${L(free)}) نیست.`});
+  others.forEach((d, i) => st.push({
+    cams:others.slice(0, i+1), free:true, added:d,
+    text:`camera روی edge ${L(d)} (بین ${L(d)} و ${L(T.par[d])}): dam ${L(d)} و زیر درختش از بقیه‌ی tree جدا شد. الان ${L(i+2)} تا component داریم.`
+  }));
+  st.push({cams:others.slice(), free:true, out,
+    text:`تموم شد. روی edge بالای هر dam به جز ${L(free)} camera گذاشتیم، پس هر component دقیقاً یه dam داره. چون m = ${L(m)} تا component لازم بود، k = m−1 = ${L(m-1)} حداقل ممکنه. خروجی:`});
+  return st;
+}
+
+function setTree(p){
+  stopAuto();
+  T = makeTree(p.n, p.p, p.a);
+  cams = new Set(); step = 0; justAdded = null;
+  steps = buildSteps();
+  applyStep();
+}
+
+function applyStep(){
+  if(mode === 'solve'){
+    const s = steps[step];
+    cams = new Set(s.cams);
+    justAdded = s.added || null;
+  }
+  render();
+}
+
+function render(){
+  const {X, Y, W, H} = T.geo;
+  const {comp, count} = components();
+  const sg = signatures();
+  const groups = new Map();
+  sg.forEach(r => { if(!groups.has(r.key)) groups.set(r.key, []); groups.get(r.key).push(r.d); });
+  const clash = new Set();
+  groups.forEach(l => { if(l.length > 1) l.forEach(d => clash.add(d)); });
+  const m = T.dams.length, k = cams.size, valid = clash.size === 0;
+  const solveStep = mode === 'solve' ? steps[step] : null;
+  const free = solveStep && solveStep.free ? Math.min(...T.dams) : null;
+  const safe = new Set();
+  if(free){ for(let v=free; v!==1; v=T.par[v]) safe.add(v); }
+  const damSet = new Set(T.dams);
+
+  // echo of the input format
+  $('#echo').innerHTML =
+    `<span>n = <code>${T.n}</code></span>` +
+    `<span>p₂…pₙ = <code>${T.par.slice(2).join(' ')}</code></span>` +
+    `<span>m = <code>${m}</code></span>` +
+    `<span>a = <code>${T.dams.join(' ')}</code></span>`;
+
+  let s = `<svg class="tree ${mode === 'play' ? 'interactive' : ''}" viewBox="0 0 ${W} ${H}" role="img" aria-label="tree با ${T.n} تا vertex">`;
+  for(let v=2; v<=T.n; v++){
+    const p = T.par[v], x1 = X[p], y1 = Y[p], x2 = X[v], y2 = Y[v];
+    const cut = cams.has(v);
+    const cls = 'edge' + (cut ? ' cut' : '') + (safe.has(v) ? ' safe' : '');
+    const inter = mode === 'play' ? ` tabindex="0" role="button" aria-pressed="${cut}" aria-label="edge ${v} بین ${v} و ${p}، ${cut ? 'camera داره' : 'camera نداره'}"` : '';
+    s += `<g class="${cls}" data-v="${v}"${inter}><title>edge ${v}: ${v} و ${p}</title>` +
+         `<line class="hit" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>` +
+         `<line class="vis" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+    if(cut){
+      const mx = (x1+x2)/2, my = (y1+y2)/2;
+      s += `<g transform="translate(${mx},${my})"><g class="camicon ${v === justAdded ? 'pop' : ''}">` +
+           `<circle r="13" fill="var(--cam)"/><circle r="6" fill="none" stroke="var(--cam-ink)" stroke-width="2.5"/>` +
+           `<circle r="2" fill="var(--cam-ink)"/></g></g>`;
+    }
+    s += `</g>`;
+  }
+  for(let v=1; v<=T.n; v++){
+    const x = X[v], y = Y[v], fill = `var(--c${comp[v] % 10})`, isDam = damSet.has(v);
+    s += `<g>`;
+    if(clash.has(v)) s += `<circle cx="${x}" cy="${y}" r="29" fill="none" stroke="var(--bad)" stroke-width="2.5" stroke-dasharray="5 4"/>`;
+    if(free === v) s += `<circle cx="${x}" cy="${y}" r="29" fill="none" stroke="var(--good)" stroke-width="3"/>`;
+    if(isDam) s += `<rect x="${x-20}" y="${y-20}" width="40" height="40" rx="10" fill="${fill}" stroke="var(--wood)" stroke-width="4"/>`;
+    else s += `<circle cx="${x}" cy="${y}" r="17" fill="${fill}" stroke="var(--edge)" stroke-width="2"/>`;
+    s += `<text class="nodetxt" x="${x}" y="${y}">${v}</text>`;
+    if(v === 1) s += `<text class="tag" x="${x}" y="${y-32}">root</text>`;
+    if(free === v) s += `<text class="tag g" x="${x}" y="${y+42}">بدون camera</text>`;
+    s += `</g>`;
+  }
+  s += `</svg>`;
+  $('#treeBox').innerHTML = s;
+
+  // stats
+  $('#stats').innerHTML =
+    `<span class="chip">camera ها<b>${k}</b></span>` +
+    `<span class="chip">حداقل ممکن (m−1)<b>${m-1}</b></span>` +
+    `<span class="chip">component ها<b>${count}</b></span>`;
+
+  // status
+  const st = $('#status');
+  if(!valid){
+    const parts = [];
+    groups.forEach(l => { if(l.length > 1) parts.push(l.map(L).join('، ')); });
+    st.className = 'status bad';
+    st.innerHTML = `<b>هنوز جواب نیست.</b> این dam ها یه چیز یکسان می‌بینن و از هم قابل تشخیص نیستن: ${parts.join(' | ')}. باید یه camera روی مسیر بینشون (توی همون component) بذاری.`;
+  } else if(k === m-1){
+    st.className = 'status good';
+    st.innerHTML = `<b>معتبر و minimal.</b> همه‌ی dam ها قابل تشخیصن و با ${L(k)} camera کار تمومه. کمتر از این ممکن نیست.`;
+  } else {
+    st.className = 'status warn';
+    st.innerHTML = `<b>معتبره ولی minimal نیست.</b> ${L(k)} camera گذاشتی ولی ${L(m-1)} تا کافیه. یکی رو بردار ببین هنوز همه‌ی dam ها جدان یا نه.`;
+  }
+
+  // signatures
+  $('#sigs').innerHTML = sg.map(r =>
+    `<li class="${clash.has(r.d) ? 'bad' : ''}"><span class="dm">dam ${r.d}</span>` +
+    (r.path.length ? r.path.map(v => `<span class="pill">cam ${v}</span>`).join('') : `<span>هیچی نمی‌بینه (∅)</span>`) +
+    `</li>`).join('');
+
+  // solve panel
+  const sp = $('#solvePanel');
+  if(mode === 'solve'){
+    sp.classList.remove('hidden');
+    const cur = steps[step];
+    $('#stepNo').textContent = `قدم ${step+1} از ${steps.length}`;
+    $('#stepText').innerHTML = cur.text;
+    const o = $('#stepOut');
+    if(cur.out){ o.classList.remove('hidden'); o.textContent = cur.out; } else o.classList.add('hidden');
+    $('#prev').disabled = step === 0;
+    $('#next').disabled = step === steps.length-1;
+    $('#auto').textContent = timer ? 'توقف' : 'پخش خودکار';
+  } else sp.classList.add('hidden');
+
+  $('#mPlay').setAttribute('aria-pressed', mode === 'play');
+  $('#mSolve').setAttribute('aria-pressed', mode === 'solve');
+  $('#clear').classList.toggle('hidden', mode === 'solve');
+  document.querySelectorAll('#presets button').forEach(b => b.setAttribute('aria-pressed', b.dataset.key === curKey));
+}
+
+function toggleEdge(v){
+  if(mode !== 'play') return;
+  if(cams.has(v)){ cams.delete(v); justAdded = null; } else { cams.add(v); justAdded = v; }
+  render();
+}
+
+function stopAuto(){ if(timer){ clearInterval(timer); timer = null; } }
+function startAuto(){
+  if(step === steps.length-1){ step = 0; applyStep(); }
+  stopAuto();
+  timer = setInterval(() => {
+    if(step < steps.length-1){ step++; applyStep(); }
+    else { stopAuto(); render(); }
+  }, 1800);
+  render();
+}
+
+function setMode(mm){
+  stopAuto();
+  mode = mm; step = 0; justAdded = null;
+  if(mode === 'play') cams = new Set();
+  applyStep();
+}
+
+function pick(key){
+  curKey = key;
+  const pr = PRESETS.find(x => x.key === key);
+  const data = pr.random ? randomPreset() : pr;
+  setTree(data);
+}
+
+// wiring
+const pb = $('#presets');
+PRESETS.forEach(pr => {
+  const b = document.createElement('button');
+  b.textContent = pr.label; b.dataset.key = pr.key; b.setAttribute('aria-pressed', 'false');
+  b.addEventListener('click', () => pick(pr.key));
+  pb.appendChild(b);
+});
+$('#mPlay').addEventListener('click', () => setMode('play'));
+$('#mSolve').addEventListener('click', () => setMode('solve'));
+$('#clear').addEventListener('click', () => { cams = new Set(); justAdded = null; render(); });
+$('#prev').addEventListener('click', () => { stopAuto(); if(step > 0){ step--; applyStep(); } });
+$('#next').addEventListener('click', () => { stopAuto(); if(step < steps.length-1){ step++; applyStep(); } });
+$('#auto').addEventListener('click', () => { if(timer){ stopAuto(); render(); } else startAuto(); });
+$('#treeBox').addEventListener('click', e => {
+  const g = e.target.closest('.edge'); if(g) toggleEdge(+g.dataset.v);
+});
+$('#treeBox').addEventListener('keydown', e => {
+  if(e.key === 'Enter' || e.key === ' '){
+    const g = e.target.closest('.edge');
+    if(g){ e.preventDefault(); toggleEdge(+g.dataset.v); }
+  }
+});
+
+pick('t4');
+</script>
+</body>
+</html>
